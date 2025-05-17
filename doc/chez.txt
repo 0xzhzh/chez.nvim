@@ -1,0 +1,199 @@
+*chez.txt*
+*Chez* *chez* *chez.nvim*
+--------------------------------------------------------------------------------
+CONTENTS                                                         *chez-contents*
+
+  1. Setup                                                          |chez-setup|
+  2. Commands                                                    |chez-commands|
+  3. Lua API                                                          |chez-api|
+  4. Events                                                        |chez-events|
+
+--------------------------------------------------------------------------------
+SETUP                                                               *chez-setup*
+
+Requirements:
+
+  - neovim, v0.11.0 or above
+  - chezmoi, available in your `PATH`
+
+Before using this plugin, you need to call its `setup()` function:
+
+>lua
+require("chez").setup()
+<
+
+Currently, no setup options are supported. Please file a GitHub Issue if you
+have any suggestions.
+
+--------------------------------------------------------------------------------
+COMMANDS                                                         *chez-commands*
+
+:Chez                                                                    *:Chez*
+:Chez status                                                      *:Chez-status*
+:Chez st                                                              *:Chez-st*
+
+    Display `chezmoi status`.
+
+    See also: `chezmoi help status`
+
+:Chez help [{subcmd}]                                               *:Chez-help*
+:Chez :h[elp] [{subcmd}]                                           *:Chez-:help*
+                                                                      *:Chez-:h*
+    Open `:help :Chez-{subcmd}`.
+
+:Chez source                                                      *:Chez-source*
+:Chez src                                                            *:Chez-src*
+
+    Edit the Chezmoi source of the current buffer, if managed.
+
+:Chez target                                                      *:Chez-target*
+:Chez tgt                                                            *:Chez-tgt*
+
+    Edit the Chezmoi target of the current buffer, if managed.
+
+:Chez alternate                                                *:Chez-alternate*
+:Chez alt                                                            *:Chez-alt*
+
+    Alternate between Chezmoi source and target of the current buffer.
+
+    If the current buffer is a Chezmoi source, edit its target.
+    If the current buffer is a Chezmoi target, edit its source.
+    Does nothing if the current buffer is unmanaged.
+
+:Chez add {opts}                                                     *:Chez-add*
+:Chez manage {opts}                                               *:Chez-manage*
+
+    Write the contents of the target file to the source file, overwriting any
+    changes in the target file. If the current file is not managed, then a
+    source file will be created for it (and thus it will become managed).
+
+    Options:
+      `--follow` follow symlinks
+
+    See also: `chezmoi help add`
+
+:Chez re-add                                                      *:Chez-re-add*
+:Chez re_add                                                      *:Chez-re_add*
+
+    Write the contents of the target file to the source file, overwriting any
+    changes in the source file. If the current file is not managed, then this
+    command will fail (unlike |:Chez-add|).
+
+    See also: `chezmoi help re-add`
+
+:Chez apply                                                       *:Chez-apply*
+
+    Write the contents of the source file to the target file, overwriting any
+    changes in the target file. If the current file is not managed, then this
+    command will fail.
+
+    See also: `chezmoi help apply`
+
+:Chez push                                                          *:Chez-push*
+
+    Push the current buffer's changes to its source or target.
+
+    If the current buffer is editing a target file, then `push` behaves like
+    |:Chez-re-add| and pushes its changes to the source file.
+
+    If the current buffer is editing a source file, then `push` behaves like
+    |:Chez-apply| and pushes its changes to the target file.
+
+    If the current buffer is unmanaged, then this command throws an error.
+
+:Chez pull                                                          *:Chez-pull*
+
+    Pull changes from the current buffer's source or target.
+
+    If the current buffer is editing a target file, then `pull` behaves like
+    |:Chez-apply| and pulls changes from the source file.
+
+    If the current buffer is editing a source file, then `pull` behaves like
+    |:Chez-re-add| and pulls changes from the target file.
+
+    If the current buffer is unmanaged, then this command throws an error.
+
+:Chez forget {opts}                                               *:Chez-forget*
+:Chez unmanage {opts}                                           *:Chez-unmanage*
+
+    Remove the current buffer's source file from the source state. The target
+    file is not touched and left in an unmanaged state.
+
+    Options:
+      `--force` do not prompt for confirmation
+
+    See also: `chezmoi help forget`
+
+:Chez destroy {opts}                                             *:Chez-destroy*
+
+    Remove both the source and target file of the current buffer.
+
+    Options:
+      `--force` do not prompt for confirmation
+
+    See also: `chezmoi help destroy`
+
+:Chez diff                                                          *:Chez-diff*
+
+    Open |diff| for the source and target file of the current buffer.
+
+:Chez! {args}                                                           *:Chez!*
+
+    Run the `chezmoi` shell command, with {args} passed directly to `chezmoi`.
+
+    This command is provided as a convenient alternative to `:!chezmoi {args}`,
+    where the output is shown in a floating buffer.
+
+    Currently, `:Chez!` does not support running interactive commands.
+
+--------------------------------------------------------------------------------
+Lua API                                                               *chez-api*
+
+Every `:Chez` (sub)command (see |chez-commands|) can also be called directly
+from Lua, like this:
+
+>lua
+require("chez").apply()
+-- same as :Chez apply
+<
+
+Each Lua API function supports an optional {opts} table that can be used to pass
+command-line options:
+
+>lua
+require("chez").destroy({ force = true })
+-- same as :Chez destroy --force
+
+require("chez").help({ "re-add" })
+-- same as :Chez help re-add
+<
+
+--------------------------------------------------------------------------------
+Events                                                             *chez-events*
+
+ChezEnter                                                            *ChezEnter*
+
+    `ChezEnter` is triggered when chez.nvim detects that Neovim has entered
+    a buffer that is managed by `chezmoi`. You can use this to configure your
+    own hooks, like this:
+
+>lua
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "ChezEnter",
+      callback = function(ev)
+        local target = vim.b[ev.buf].chezmoi_target
+        local source = vim.b[ev.buf].chezmoi_source
+        if target then
+          vim.notify("entered source buffer of target: " .. target)
+        elseif source then
+          vim.notify("entered target buffer of source: " .. source)
+        else
+          error("this event should not fire for unmanaged files")
+          -- If you encounter this scenario, please open a GitHub issue!
+        end
+      end,
+    })
+<
+
+================================================================================
+vim:tw=80:ts=2:et:ft=help:norl:syntax=help:
