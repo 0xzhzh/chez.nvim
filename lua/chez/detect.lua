@@ -20,6 +20,7 @@ function M.run_detect(buf_id)
   end
 
   exec.exec_chezmoi({ "source-path", buf_file }, function(src_path)
+    if not vim.api.nvim_buf_is_valid(buf_id) then return end
     if src_path then
       vim.b[buf_id].chezmoi_source = vim.trim(src_path)
       exec_enter()
@@ -29,6 +30,7 @@ function M.run_detect(buf_id)
   end, false)
 
   exec.exec_chezmoi({ "target-path", buf_file }, function(tgt_path)
+    if not vim.api.nvim_buf_is_valid(buf_id) then return end
     if tgt_path then
       vim.b[buf_id].chezmoi_target = vim.trim(tgt_path)
       exec_enter()
